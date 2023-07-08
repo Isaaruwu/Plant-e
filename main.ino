@@ -74,15 +74,37 @@ void notifyWatering(String event_name){
   delay(5000);
 }
 
+void circularAnimation() {
+  for (int i = 0; i < 5; i++) {
+    carrier.leds.fill(lightsOn, i, 1);
+    carrier.Buzzer.beep(800);
+    carrier.leds.show();
+    if (i > 0) {
+      int prevLed = i-1;
+      carrier.leds.fill(lightsOff, prevLed, 1);
+      carrier.leds.show();
+    }
+    delay(100);
+  }
+  carrier.leds.fill(lightsOff, 4, 1);
+  carrier.leds.show();
+}
+
 void onWaterpumpChange() {
   if (waterpump) {
-    waterPumpState = "PUMP: ON";
     carrier.Relay2.open();
-
+    waterPumpState = "PUMP: ON";
     updateScreen();
-    delay(1500);
-
+    
+    // Light animation
+    for (int i = 0; i < 10; i++) {
+      circularAnimation();
+      delay(100);
+    }
+    
+    delay(250);
     carrier.Relay2.close();
+    waterpump = false;
     waterPumpState = "PUMP: OFF";
     updateScreen();
   }
