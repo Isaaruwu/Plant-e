@@ -39,39 +39,36 @@ void setup() {
 }
  
 void loop() {
-  //Update the Cloud
   ArduinoCloud.update();
- 
-  //read temperature and humidity
+  
   temperature = carrier.Env.readTemperature();
   humidity = carrier.Env.readHumidity();
  
-  //read raw moisture value
   int raw_moisture = analogRead(moistPin);
- 
-  //map raw moisture to a scale of 0 - 100
   moisture = map(raw_moisture, 0, 1023, 100, 0);
- 
-  //read ambient light
-  while (!carrier.Light.colorAvailable()) {
-    delay(5);
+  
+  
+  if (moisture < 20) {
+    waterpump = true;
+    onWaterpumpChange();
+    waterpump = false;
   }
-  int none; //We dont need RGB colors
-  carrier.Light.readColor(none, none, none, light);
- 
+
   delay(100);
- 
 }
  
 void onWaterpumpChange() {
-  if (waterpump == true) {
-    carrier.Relay2.open();
+  if (waterpump) {
     waterPumpState = "PUMP: ON";
-  } else {
+    carrier.Relay2.open();
+
+    updateScreen();
+    delay(1500);
+
     carrier.Relay2.close();
     waterPumpState = "PUMP: OFF";
+    updateScreen();
   }
-  updateScreen();
 }
  
 void onCoolingFanChange() {
