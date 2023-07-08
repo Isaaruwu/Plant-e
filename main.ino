@@ -12,31 +12,29 @@ uint32_t lightsOn = carrier.leds.Color(82, 118, 115);
 uint32_t lightsOff = carrier.leds.Color(0, 0, 0);
  
 void setup() {
-  // Initialize serial and wait for port to open:
   Serial.begin(9600);
-  // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
   delay(1500); 
  
-  // Defined in thingProperties.h
   initProperties();
  
-  // Connect to Arduino IoT Cloud
   ArduinoCloud.begin(ArduinoIoTPreferredConnection);
-  //Get Cloud Info/errors , 0 (only errors) up to 4
   setDebugMessageLevel(2);
   ArduinoCloud.printDebugInfo();
  
-  //Wait to get cloud connection to init the carrier
   while (ArduinoCloud.connected() != 1) {
     ArduinoCloud.update();
     delay(500);
   }
- 
+  
   delay(500);
   CARRIER_CASE = false;
   carrier.begin();
-  moistPin = carrier.getBoardRevision() == 1 ? A5 : A0; //assign A0 or A5 based on HW revision
+  moistPin = carrier.getBoardRevision() == 1 ? A5 : A0;
   carrier.display.setRotation(0);
+  carrier.display.fillScreen(ST77XX_BLACK);
+  carrier.display.drawBitmap(65, 70, CAT_LOGO, 100, 100, ST77XX_WHITE);
+  starting_melody();
+  updateScreen();
   delay(1500);
 }
  
@@ -100,7 +98,6 @@ void onArtificialLightChange() {
   updateScreen();
 }
  
-//Update displayed Info
 void updateScreen() {
   carrier.display.fillScreen(ST77XX_BLACK);
   carrier.display.setTextColor(ST77XX_WHITE);
@@ -112,4 +109,22 @@ void updateScreen() {
   carrier.display.print(coolingFanState);
   carrier.display.setCursor(40, 130);
   carrier.display.print(lightState);
+}
+
+void starting_melody() {
+  int finalMelody[] = {
+    1319, 1568, 2637, 2093, 2349, 3136, 2637, 1568
+  };
+  int noteDurations[] = {
+    4, 8, 8, 4, 4, 4, 4, 4
+  };
+
+  for (int thisNote = 0; thisNote < 8; thisNote++) {
+    int noteDuration = 1000 / noteDurations[thisNote];
+    carrier.Buzzer.sound(finalMelody[thisNote]);
+    delay(noteDuration);
+    int pauseBetweenNotes = noteDuration * 1.0;
+    delay(pauseBetweenNotes);
+    carrier.Buzzer.noSound();
+  }
 }
