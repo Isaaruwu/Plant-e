@@ -48,7 +48,10 @@ void loop() {
   moisture = map(raw_moisture, 0, 1023, 100, 0);
   
   
-  if (moisture < 20) {
+  if (moisture > 20) {
+    String event_name = "watering";
+    notifyWatering(event_name);
+    delay(500);
     waterpump = true;
     onWaterpumpChange();
     waterpump = false;
@@ -56,7 +59,21 @@ void loop() {
 
   delay(100);
 }
- 
+
+void notifyWatering(String event_name){
+  String url = "/trigger/" + event_name + "/json/with/key/" + API_KEY;
+  client.post(url, "application/json", "{}");
+
+  int statusCode = client.responseStatusCode();
+  String response = client.responseBody();
+
+  Serial.print("Status code: ");
+  Serial.println(statusCode);
+  Serial.print("Response: ");
+  Serial.println(response);\
+  delay(5000);
+}
+
 void onWaterpumpChange() {
   if (waterpump) {
     waterPumpState = "PUMP: ON";
