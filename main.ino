@@ -1,16 +1,21 @@
-#include "thingProperties.h"
+#include <WiFiNINA.h>
+#include <ArduinoHttpClient.h>
 #include <Arduino_MKRIoTCarrier.h>
+
+#include "thingProperties.h"
+#include "visual.h"
+
 MKRIoTCarrier carrier;
- 
+
 int moistPin;
  
 String waterPumpState;
 String coolingFanState;
 String lightState;
- 
+
 uint32_t lightsOn = carrier.leds.Color(82, 118, 115);
 uint32_t lightsOff = carrier.leds.Color(0, 0, 0);
- 
+  
 void setup() {
   Serial.begin(9600);
   delay(1500); 
@@ -108,17 +113,6 @@ void onWaterpumpChange() {
     waterPumpState = "PUMP: OFF";
     updateScreen();
   }
-}
- 
-void onCoolingFanChange() {
-  if (cooling_fan == true) {
-    carrier.Relay1.open();
-    coolingFanState = "FAN: ON";
-  } else {
-    carrier.Relay1.close();
-    coolingFanState = "FAN: OFF";
-  }
-  updateScreen();
 }
  
 void onArtificialLightChange() {
