@@ -8,13 +8,14 @@
 MKRIoTCarrier carrier;
 
 int moistPin;
- 
-String waterPumpState;
-String coolingFanState;
-String lightState;
 
 uint32_t lightsOn = carrier.leds.Color(82, 118, 115);
 uint32_t lightsOff = carrier.leds.Color(0, 0, 0);
+
+uint32_t greenLight = carrier.leds.Color(25, 135, 84);
+uint32_t yellowLight = carrier.leds.Color(255, 191, 0);
+uint32_t redLight = carrier.leds.Color(165, 42, 42);
+
   
 void setup() {
   Serial.begin(9600);
@@ -34,12 +35,11 @@ void setup() {
   delay(500);
   CARRIER_CASE = false;
   carrier.begin();
-  moistPin = carrier.getBoardRevision() == 1 ? A5 : A0;
+  moistPin = A6;
   carrier.display.setRotation(0);
   carrier.display.fillScreen(ST77XX_BLACK);
   carrier.display.drawBitmap(65, 70, CAT_LOGO, 100, 100, ST77XX_WHITE);
-  starting_melody();
-  updateScreen();
+  //starting_melody();
   delay(1500);
 }
  
@@ -47,42 +47,53 @@ void loop() {
   ArduinoCloud.update();
   
   temperature = carrier.Env.readTemperature();
+  delay(100);
+
+  if (temperature > 38) {openFan();}
+  
   humidity = carrier.Env.readHumidity();
  
   int raw_moisture = analogRead(moistPin);
   moisture = map(raw_moisture, 0, 1023, 100, 0);
+  if (moisture > 40) {
+    carrier.leds.fill(greenLight, 0, 5);
+    carrier.leds.show();
+  } else if (moisture > 25) {
+    carrier.leds.fill(yellowLight, 0, 5);
+    carrier.leds.show();
+  } else {
+    carrier.leds.fill(redLight, 0, 5);
+    carrier.leds.show();
+    delay(3000);
+    handleMoistPin(moisture);
+  }
   
-  
-  if (moisture > 20) {
+  delay(100);
+}
+
+void handleMoistPin(int moisture) {
     String event_name = "watering";
     notifyWatering(event_name);
     delay(500);
     waterpump = true;
     onWaterpumpChange();
     waterpump = false;
-  }
-
-  delay(100);
 }
 
 void notifyWatering(String event_name){
   String url = "/trigger/" + event_name + "/json/with/key/" + API_KEY;
   client.post(url, "application/json", "{}");
 
-  int statusCode = client.responseStatusCode();
-  String response = client.responseBody();
-
   Serial.print("Status code: ");
-  Serial.println(statusCode);
+  Serial.println(client.responseStatusCode());
   Serial.print("Response: ");
-  Serial.println(response);\
+  Serial.println(client.responseBody());
   delay(5000);
 }
 
 void circularAnimation() {
   for (int i = 0; i < 5; i++) {
     carrier.leds.fill(lightsOn, i, 1);
-    carrier.Buzzer.beep(800);
     carrier.leds.show();
     if (i > 0) {
       int prevLed = i-1;
@@ -98,47 +109,24 @@ void circularAnimation() {
 void onWaterpumpChange() {
   if (waterpump) {
     carrier.Relay2.open();
-    waterPumpState = "PUMP: ON";
-    updateScreen();
-    
+
     // Light animation
     for (int i = 0; i < 10; i++) {
+      carrier.Buzzer.beep(800);
       circularAnimation();
       delay(100);
     }
-    
-    delay(250);
+    delay(500);
     carrier.Relay2.close();
-    waterpump = false;
-    waterPumpState = "PUMP: OFF";
-    updateScreen();
+    delay(500);
   }
 }
- 
-void onArtificialLightChange() {
-  if (artificial_light == true) {
-    carrier.leds.fill(lightsOn, 0, 5);
-    carrier.leds.show();
-    lightState = "LIGHTS: ON";
-  } else {
-    carrier.leds.fill(lightsOff, 0, 5);
-    carrier.leds.show();
-    lightState = "LIGHTS: OFF";
-  }
-  updateScreen();
-}
- 
-void updateScreen() {
-  carrier.display.fillScreen(ST77XX_BLACK);
-  carrier.display.setTextColor(ST77XX_WHITE);
-  carrier.display.setTextSize(3);
- 
-  carrier.display.setCursor(40, 50);
-  carrier.display.print(waterPumpState);
-  carrier.display.setCursor(40, 90);
-  carrier.display.print(coolingFanState);
-  carrier.display.setCursor(40, 130);
-  carrier.display.print(lightState);
+
+void openFan() {
+  carrier.Relay1.open();
+  delay(10000);
+  carrier.Relay1.close();
+  delay(250);
 }
 
 void starting_melody() {
