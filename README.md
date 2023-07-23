@@ -3,7 +3,7 @@ Plant-e is a self-watering plant system built using the Arduino MKR Wifi1010. It
 
 ## Features ✨
 - Self-watering plant system utilizing the Arduino MKR IoT Kit
-- Real-time monitoring of soil moisture, ambient temperature, and ambient light levels
+- Real-time monitoring of soil moisture, ambient temperature and ambient humidity
 - Arduino Dashboard accessible on mobile and desktop devices for convenient data visualization
 - Automatic watering functionality triggered when soil moisture drops below a specified threshold
 - IFTTT integration for sending phone notifications when watering is initiated
@@ -20,3 +20,6 @@ To replicate and utilize the Plant-e system, you will need the following compone
 - TFT display
 - Tubing and connectors for the watering system
 - IFTTT account for phone notifications
+
+![Image-1](https://github.com/Isaaruwu/Plant-e/assets/89482200/65e045cb-3f73-45cd-9feb-3807b016b28c)
+![Screenshot_20230722-231726](https://github.com/Isaaruwu/Plant-e/assets/89482200/cd880a75-dc7a-45e9-acf9-80de5077be10)
