@@ -8,6 +8,10 @@
 MKRIoTCarrier carrier;
 
 int moistPin;
+bool fanOppened;
+
+const int FAN_THRESHOLD = 30;
+
 
 uint32_t lightsOn = carrier.leds.Color(82, 118, 115);
 uint32_t lightsOff = carrier.leds.Color(0, 0, 0);
@@ -35,11 +39,14 @@ void setup() {
   delay(500);
   CARRIER_CASE = false;
   carrier.begin();
+  
   moistPin = A6;
+  
   carrier.display.setRotation(0);
   carrier.display.fillScreen(ST77XX_BLACK);
   carrier.display.drawBitmap(65, 70, CAT_LOGO, 100, 100, ST77XX_WHITE);
-  //starting_melody();
+  
+  starting_melody();
   delay(1500);
 }
  
@@ -47,14 +54,14 @@ void loop() {
   ArduinoCloud.update();
   
   temperature = carrier.Env.readTemperature();
+  handleFan(temperature);
   delay(100);
 
-  if (temperature > 38) {openFan();}
-  
   humidity = carrier.Env.readHumidity();
  
   int raw_moisture = analogRead(moistPin);
   moisture = map(raw_moisture, 0, 1023, 100, 0);
+  
   if (moisture > 40) {
     carrier.leds.fill(greenLight, 0, 5);
     carrier.leds.show();
@@ -64,31 +71,25 @@ void loop() {
   } else {
     carrier.leds.fill(redLight, 0, 5);
     carrier.leds.show();
-    delay(3000);
-    handleMoistPin(moisture);
+    handleMoisture(moisture);
   }
-  
-  delay(100);
+
+  delay(500);
 }
 
-void handleMoistPin(int moisture) {
-    String event_name = "watering";
-    notifyWatering(event_name);
-    delay(500);
-    waterpump = true;
-    onWaterpumpChange();
-    waterpump = false;
+void handleMoisture(int moisture) {
+  String event_name = "watering";
+  notifyWatering(event_name);
+  waterpump = true;
+  onWaterpumpChange();
+  waterpump = false;
 }
 
 void notifyWatering(String event_name){
   String url = "/trigger/" + event_name + "/json/with/key/" + API_KEY;
   client.post(url, "application/json", "{}");
 
-  Serial.print("Status code: ");
-  Serial.println(client.responseStatusCode());
-  Serial.print("Response: ");
-  Serial.println(client.responseBody());
-  delay(5000);
+  delay(6000);
 }
 
 void circularAnimation() {
@@ -109,24 +110,25 @@ void circularAnimation() {
 void onWaterpumpChange() {
   if (waterpump) {
     carrier.Relay2.open();
-
     // Light animation
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 5; i++) {
       carrier.Buzzer.beep(800);
       circularAnimation();
       delay(100);
     }
-    delay(500);
     carrier.Relay2.close();
     delay(500);
   }
 }
 
-void openFan() {
-  carrier.Relay1.open();
-  delay(10000);
-  carrier.Relay1.close();
-  delay(250);
+void handleFan(int temperature) {
+  if (temperature > FAN_THRESHOLD && !fanOppened) {
+    carrier.Relay1.open();
+  }
+  else if (temperature <= FAN_THRESHOLD && fanOppened) {
+    carrier.Relay1.close();
+  }
+  fanOppened = !fanOppened;
 }
 
 void starting_melody() {
